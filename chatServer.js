@@ -27,6 +27,7 @@ http.listen(serverPort, function() {
 // as long as someone is connected, listen for messages
 io.on('connect', function(socket) {
   console.log('a new user connected');
+  console.log('something I just wrote');
   var questionNum = 0; // keep count of question, used for IF condition.
   socket.on('loaded', function(){// we wait until the client has loaded and contacted us that it is ready to go.
 
