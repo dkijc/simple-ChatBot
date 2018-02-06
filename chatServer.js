@@ -83,6 +83,7 @@ function bot(data,socket,questionNum) {
     if (zipcodes.lookup(input) === undefined ) {
       socket.emit('answer',"I'm sorry I don't recognize that zipcode :("); //We start with the introduction;
       setTimeout(timedQuestion, 2500, socket, "Can you recheck the number please?"); // Wait a moment and respond with a question.
+      questionNum -= 1;
     } else {
       answer= ' Cool! I have never been to ' + zipcodes.lookup(input).city +'.';
       waitTime =2000;
