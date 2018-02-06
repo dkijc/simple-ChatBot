@@ -8,8 +8,9 @@ var express = require('express'); // web server application
 var app = express(); // webapp
 var http = require('http').Server(app); // connects http library to server
 var io = require('socket.io')(http); // connect websocket library to server
+var zipcodes = require('zipcodes');
 var serverPort = 8000;
-
+var adjectives = ['horrendous', 'great', 'complicated', 'interesting', 'beautiful', 'cool', 'fantastic', 'unique', 'ugly', 'dope', 'pretty'];
 
 //---------------------- WEBAPP SERVER SETUP ---------------------------------//
 // use express to create the simple webapp
@@ -27,18 +28,34 @@ http.listen(serverPort, function() {
 // as long as someone is connected, listen for messages
 io.on('connect', function(socket) {
   console.log('a new user connected');
-  console.log('something I just wrote');
   var questionNum = 0; // keep count of question, used for IF condition.
   socket.on('loaded', function(){// we wait until the client has loaded and contacted us that it is ready to go.
-
-  socket.emit('answer',"Hey, Hello I am \"___*-\" a simple chat bot example."); //We start with the introduction;
-  setTimeout(timedQuestion, 2500, socket,"What is your Name?"); // Wait a moment and respond with a question.
-
-});
+    socket.emit('answer',"Hey, Hello I am \"Burt\", Your friendly bot."); //We start with the introduction;
+    setTimeout(timedQuestion, 2000, socket,"What is your Name?"); // Wait a moment and respond with a question.
+  });
   socket.on('message', (data)=>{ // If we get a new message from the client we process it;
         console.log(data);
-        questionNum= bot(data,socket,questionNum);	// run the bot function with the new message
-      });
+        if (questionNum ===  0 && !data.match(/^[0-9a-zA-Z]+$/)) {
+          var adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+          socket.emit('answer',"That's a " + adjective + " name! But it's too complicated for me :-("); //We start with the introduction;
+          setTimeout(timedQuestion, 2500, socket, "Do you have any simpler name that you go by??"); // Wait a moment and respond with a question.
+        }
+        else if (questionNum ===  1 && !data.match(/^[0-9]+$/)) {
+          socket.emit('answer',"That's not a number :-(!"); //We start with the introduction;
+          setTimeout(timedQuestion, 2500, socket, "Can you tell me your real age? Don't be shy :)"); // Wait a moment and respond with a question.
+        }
+        else if (questionNum ===  2 && !data.match(/^[0-9]+$/)) {
+          socket.emit('answer',"That's not a number :-(!"); //We start with the introduction;
+          setTimeout(timedQuestion, 2500, socket, "I think all zipcodes are numbers, no?? Try it again, please~"); // Wait a moment and respond with a question.
+        } 
+        else if (questionNum ===  3 && !data.match(/^[a-zA-Z]+$/)) {
+          socket.emit('answer',"I'm sorry I only accept alphabet character :("); //We start with the introduction;
+          setTimeout(timedQuestion, 2500, socket, "Where would you like to visit?"); // Wait a moment and respond with a question.
+        } 
+        else {
+          questionNum = bot(data, socket, questionNum);
+        }
+  });
   socket.on('disconnect', function() { // This function  gets called when the browser window gets closed
     console.log('user disconnected');
   });
@@ -51,6 +68,7 @@ function bot(data,socket,questionNum) {
   var waitTime;
 
 /// These are the main statments that make up the conversation.
+ 
   if (questionNum == 0) {
   answer= 'Hello ' + input + ' :-)';// output response
   waitTime =2000;
@@ -59,41 +77,25 @@ function bot(data,socket,questionNum) {
   else if (questionNum == 1) {
   answer= 'Really ' + input + ' Years old? So that means you where born in: ' + (2018-parseInt(input));// output response
   waitTime =2000;
-  question = 'Where do you live?';			    	// load next question
+  question = 'Where do you live? (zipcode, please~)';			    	// load next question
   }
   else if (questionNum == 2) {
-  answer= ' Cool! I have never been to ' + input+'.';
-  waitTime =2000;
-  question = 'Whats your favorite Color?';			    	// load next question
+    if (zipcodes.lookup(input) === undefined ) {
+      socket.emit('answer',"I'm sorry I don't recognize that zipcode :("); //We start with the introduction;
+      setTimeout(timedQuestion, 2500, socket, "Can you recheck the number please?"); // Wait a moment and respond with a question.
+    } else {
+      answer= ' Cool! I have never been to ' + zipcodes.lookup(input).city +'.';
+      waitTime =2000;
+      question = 'Is it usually hot, mild, or cold there?';			    	// load next question
+    }
   }
   else if (questionNum == 3) {
-  answer= 'Ok, ' + input+' it is.';
-  socket.emit('changeBG',input.toLowerCase());
+  answer= 'Ah, I like it ' + input + '!';
   waitTime = 2000;
-  question = 'Can you still read the font?';			    	// load next question
-  }
-  else if (questionNum == 4) {
-    if(input.toLowerCase()==='yes'|| input===1){
-      answer = 'Perfect!';
-      waitTime =2000;
-      question = 'Whats your favorite place?';
-    }
-    else if(input.toLowerCase()==='no'|| input===0){
-        socket.emit('changeFont','white'); /// we really should look up the inverse of what we said befor.
-        answer=''
-        question='How about now?';
-        waitTime =0;
-        questionNum--; // Here we go back in the question number this can end up in a loop
-    }else{
-      answer=' I did not understand you. Can you please answer with simply with yes or no.'
-      question='';
-      questionNum--;
-      waitTime =0;
-    }
-  // load next question
+  question = 'Where would you like to visit?';			    	// load next question
   }
   else{
-    answer= 'I have nothing more to say!';// output response
+    answer= 'Great! I hope I get to meet you in ' + input + ' in person!';// output response
     waitTime =0;
     question = '';
   }
